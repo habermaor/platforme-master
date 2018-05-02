@@ -1,27 +1,18 @@
 
 var express = require('express');
+var cors = require('cors');
+
 var path = require('path');
 var mysql = require('mysql');
 var app = express();
 
-var //editor = [express.static(path.resolve(__dirname, '../../platforme-editor/')), (req, res) => res.sendFile(path.resolve(__dirname, '../../platforme-editor/index.html'))],
-    player = [express.static(path.resolve(__dirname , '../../player')), (req, res) => res.sendFile(__dirname , '../../player/index.html')];
-
+var player = [express.static(path.resolve(__dirname , '../../player')), (req, res) => res.sendFile(__dirname , '../../player/index.html')];
 
 
 const api = express.Router();
-api.get('/item/:route', readGameRecord);
-
-const DB_CONFIG = {
-    "HOST": "platformedb.c9vmaegoysdi.us-east-2.rds.amazonaws.com",
-    "USERNAME": "platformedb",
-    "PASSWORD": "1q2w3e4r",
-    "DBNAME": "platforme"
-};
-
-
-
-function readGameRecord(route) {
+api.get('/test', function (req, res) { console.log('aaaaaaaaaaaaaaa');})//this is working
+api.get('/item/:route', function (req, res) {
+    console.log(req, res, "in readGameRecord");
     pool = mysql.createPool({
         connectionLimit: 10,
         host: DB_CONFIG.HOST,
@@ -33,31 +24,32 @@ function readGameRecord(route) {
         // connected! (unless `err` is set)
     });
     pool.on('connection', function (connection) {
-       
+        console.log("connected");
         connection.query({
             sql: 'SELECT * FROM `games` WHERE `route` = ?',
-            timeout: 10000, // 10s
-            values: [route.params.route]
+            timeout: 2000, // 2s
+            values: [req.params.route]
         }, function (error, results, fields) {
-            // error will be an Error if one occurred during the query
-            // results will contain the results of the query
-            console.log(results)
-            //WORKING! - know we're left with passing this JSON to the platforme-player!
-            //if i want it as simple as possible, we could acctualy move the entire server into 'platforme-player', and do the DB quering as a part of a game.state
-            // fields will contain information about the returned results fields (if any)
+            if (results) {
+                console.log(results && results[0] && results[0].value)
+                res.send(results && results[0] && results[0].value)
+            }
+            console.log(error);
+
         })
     });
-}
+});
+const DB_CONFIG = {
+    "HOST": "platformedb.c9vmaegoysdi.us-east-2.rds.amazonaws.com",
+    "USERNAME": "platformedb",
+    "PASSWORD": "1q2w3e4r",
+    "DBNAME": "platforme"
+};
 
-
-
-//app.get('/', player);
-//app.get('/editor', editor);
+app.use(cors());
 app.use('/api/', api);
+app.use('/office/', player);
+app.use('/jungle/', player);
 app.use(player);
-
-
-
-//app.listen(3000);
 module.exports = app;
 
