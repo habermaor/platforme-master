@@ -10,7 +10,6 @@ var player = [express.static(path.resolve(__dirname , '../../player')), (req, re
 
 
 const api = express.Router();
-api.get('/test', function (req, res) { console.log('aaaaaaaaaaaaaaa');})//this is working
 api.get('/item/:route', function (req, res) {
     console.log(req, res, "in readGameRecord");
     pool = mysql.createPool({
@@ -31,7 +30,6 @@ api.get('/item/:route', function (req, res) {
             values: [req.params.route]
         }, function (error, results, fields) {
             if (results) {
-                console.log(results && results[0] && results[0].value)
                 res.send(results && results[0] && results[0].value)
             }
             console.log(error);
