@@ -11,7 +11,7 @@ var player = [express.static(path.resolve(__dirname, '../../player')),(req, res)
 var editor = [express.static(path.resolve(__dirname, '../../editor')), (req, res) => res.sendFile(__dirname, '../../editor/index.html')];
 
 const api = express.Router();
-api.get('/item/:route', function (req, res) {
+api.get('/item/:id', function (req, res) {
 
     pool = mysql.createPool({
         connectionLimit: 10,
@@ -25,9 +25,9 @@ api.get('/item/:route', function (req, res) {
     });
     pool.on('connection', function (connection) {
         connection.query({
-            sql: 'SELECT * FROM `games` WHERE `route` = ?',
+            sql: 'SELECT * FROM `games` WHERE `id` = ?',
             timeout: 20000, // 20s
-            values: [req.params.route]
+            values: [req.params.id]
         }, function (error, results, fields) {
             if (results) {
                 res.send(results && results[0] && results[0].value)
