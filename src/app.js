@@ -7,7 +7,7 @@ var mysql = require('mysql');
 var app = express();
 app.use(bodyParser.json({ limit: '50mb' }));
 
-var player = [express.static(path.resolve(__dirname, '../../player')),(req, res) => res.sendFile(__dirname, '../../player/index.html')];
+var player = [express.static(path.resolve(__dirname, '../../player')), (req, res) => res.sendFile(__dirname, '../../player/index.html')];
 var editor = [express.static(path.resolve(__dirname, '../../editor')), (req, res) => res.sendFile(__dirname, '../../editor/index.html')];
 
 const api = express.Router();
@@ -21,6 +21,7 @@ api.get('/item/:id', function (req, res) {
         database: DB_CONFIG.DBNAME
     });
     pool.getConnection(function (err, connection) {
+
         // connected! (unless `err` is set)
     });
     pool.on('connection', function (connection) {
@@ -32,13 +33,22 @@ api.get('/item/:id', function (req, res) {
             if (results) {
                 res.send(results && results[0] && results[0].value)
             }
-            console.log(error);
+            console.log('err', error);// seems like the base64 for the sprite is too heavy..
 
         })
     });
 });
 api.post('/create', function (req, res) {
-    console.log("req.body of create", req.body);
+
+    //here we  save the image on disk + replacing the base64 to file location
+    var base64Data = req.body.assets.hero.url.replace(/^data:image\/png;base64,/, "");
+    var fileName = Date.now() + '.png';
+    const filePath = path.resolve(__dirname, '../../player/assets/');
+    require("fs").writeFile(filePath + '/' + fileName, base64Data, 'base64', (err) => {
+        if (err) throw err;
+        req.body.assets.hero.url = req.headers.origin + '/player/assets/' + fileName;
+    });
+    ///
     pool = mysql.createPool({
         connectionLimit: 10,
         host: DB_CONFIG.HOST,
@@ -76,7 +86,7 @@ const DB_CONFIG = {
 app.use(cors());
 app.use('/api/', api);
 app.use('/editor/', editor);
-app.use('/player/', player);    
+app.use('/player/', player);
 app.use(player);
 module.exports = app;
 
