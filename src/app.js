@@ -33,7 +33,7 @@ api.get('/item/:id', function (req, res) {
             if (results) {
                 res.send(results && results[0] && results[0].value)
             }
-            console.log('err', error);// seems like the base64 for the sprite is too heavy..
+           
 
         })
     });
@@ -48,6 +48,15 @@ api.post('/create', function (req, res) {
         if (err) throw err;
         req.body.assets.hero.url = req.headers.origin + '/player/assets/' + fileName;
     });
+    if (req.body.assets.enemies[0].url.substring(0, 21) == 'data:image/png;base64')
+    {
+        var enemyBase64Data = req.body.assets.enemies[0].url.replace(/^data:image\/png;base64,/, "");
+        var enemyFileName = Date.now() + '_enemy.png';
+        require("fs").writeFile(filePath + '/' + enemyFileName, enemyBase64Data, 'base64', (err) => {
+            if (err) throw err;
+            req.body.assets.enemies[0].url = req.headers.origin + '/player/assets/' + enemyFileName;
+        });
+    }
     ///
     pool = mysql.createPool({
         connectionLimit: 10,
