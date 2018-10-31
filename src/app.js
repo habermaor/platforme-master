@@ -8,6 +8,7 @@ var app = express();
 app.use(bodyParser.json({ limit: '50mb' }));
 
 var player = [express.static(path.resolve(__dirname, '../../player')), (req, res) => res.sendFile(__dirname, '../../player/index.html')];
+//the editor handler is a problem. it is not static, and here we serve a static file. this is why the wildcard of the routing does not work!
 var editor = [express.static(path.resolve(__dirname, '../../editor')), (req, res) => res.sendFile(__dirname, '../../editor/index.html')];
 
 const api = express.Router();
@@ -33,31 +34,35 @@ api.get('/item/:id', function (req, res) {
             if (results) {
                 res.send(results && results[0] && results[0].value)
             }
-           
+
 
         })
     });
 });
 api.post('/create', function (req, res) {
 
-    //here we  save the image on disk + replacing the base64 to file location
-    var base64Data = req.body.assets.hero.url.replace(/^data:image\/png;base64,/, "");
-    var fileName = Date.now() + '.png';
     const filePath = path.resolve(__dirname, '../../player/assets/');
-    require("fs").writeFile(filePath + '/' + fileName, base64Data, 'base64', (err) => {
-        if (err) throw err;
-        req.body.assets.hero.url = req.headers.origin + '/player/assets/' + fileName;
-    });
-    if (req.body.assets.enemies[0].url.substring(0, 21) == 'data:image/png;base64')
-    {
-        var enemyBase64Data = req.body.assets.enemies[0].url.replace(/^data:image\/png;base64,/, "");
-        var enemyFileName = Date.now() + '_enemy.png';
-        require("fs").writeFile(filePath + '/' + enemyFileName, enemyBase64Data, 'base64', (err) => {
+
+    findBase64(req.body.assets);
+    function findBase64(obj) {
+        for (var k in obj) {
+            if (typeof obj[k] == "object" && obj[k] !== null)
+                findBase64(obj[k]);
+            else
+                if (k == "url" && obj[k].substring(0, 21) == 'data:image/png;base64')
+                    base64ToFile(obj , k);
+                  
+        }
+    }
+    function base64ToFile(obj , key) {
+        var Base64Data = obj[key].replace(/^data:image\/png;base64,/, "");
+        var FileName = Date.now() + Math.random().toString(36).substr(2, 5) + '.png';
+        require("fs").writeFile(filePath + '/' + FileName, Base64Data, 'base64', (err) => {
             if (err) throw err;
-            req.body.assets.enemies[0].url = req.headers.origin + '/player/assets/' + enemyFileName;
+            obj[key] = req.headers.origin + '/player/assets/' + FileName;
         });
     }
-    ///
+    
     pool = mysql.createPool({
         connectionLimit: 10,
         host: DB_CONFIG.HOST,
