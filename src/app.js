@@ -50,11 +50,14 @@ api.post('/create', function (req, res) {
                 findBase64(obj[k]);
             else
                 if (k == "url" && obj[k].substring(0, 21) == 'data:image/png;base64')
-                    base64ToFile(obj , k);
-                  
+                    base64ImageToFile(obj, k);
+                else
+                    if (k == "url" && obj[k].substring(0, 15) == 'data:audio/ogg;') {
+                        base64AudioToFile(obj, k);
+                    }
         }
     }
-    function base64ToFile(obj , key) {
+    function base64ImageToFile(obj, key) {
         var Base64Data = obj[key].replace(/^data:image\/png;base64,/, "");
         var FileName = Date.now() + Math.random().toString(36).substr(2, 5) + '.png';
         require("fs").writeFile(filePath + '/' + FileName, Base64Data, 'base64', (err) => {
@@ -62,7 +65,14 @@ api.post('/create', function (req, res) {
             obj[key] = req.headers.origin + '/player/assets/' + FileName;
         });
     }
-    
+    function base64AudioToFile(obj, key) {
+        var Base64Data = ((obj[key]) + '').replace(/^data:audio\/ogg; codecs=opus;base64,/, "");
+        var FileName = Date.now() + Math.random().toString(36).substr(2, 5) + '.ogg';
+        require("fs").writeFile(filePath + '/' + FileName, Base64Data, 'base64', (err) => {
+            if (err) throw err;
+            obj[key] = req.headers.origin + '/player/assets/' + FileName;
+        });
+    }
     pool = mysql.createPool({
         connectionLimit: 10,
         host: DB_CONFIG.HOST,
